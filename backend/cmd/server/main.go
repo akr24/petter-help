@@ -17,6 +17,7 @@ import (
 
 	httpadapter "github.com/akr24/petter-help/backend/internal/adapter/http"
 	"github.com/akr24/petter-help/backend/internal/adapter/postgres"
+	"github.com/akr24/petter-help/backend/internal/token"
 	"github.com/akr24/petter-help/backend/internal/usecase"
 )
 
@@ -32,10 +33,16 @@ func main() {
 	}
 	defer pool.Close()
 
+	tokens, err := token.New(os.Getenv("JWT_SECRET"), 24*time.Hour)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	e := httpadapter.New(httpadapter.Deps{
 		DB:         pool,
 		Dogs:       usecase.NewDogs(postgres.NewDogRepository(pool)),
-		Auth:       usecase.NewAuth(postgres.NewUserRepository(pool)),
+		Auth:       usecase.NewAuth(postgres.NewUserRepository(pool), tokens),
+		Tokens:     tokens,
 		CORSOrigin: envOr("CORS_ORIGIN", "*"),
 	})
 	e.Server.ReadHeaderTimeout = 5 * time.Second

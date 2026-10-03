@@ -56,11 +56,17 @@ one, `make db-reset` drops the volume so it is applied on the next `make up`.
 |--------|----------------------|--------------------------------------------|
 | GET    | `/healthz`           |                                            |
 | GET    | `/api/dogs`          |                                            |
-| POST   | `/api/auth/register` | `{"email", "password", "role"}` role is `seeker` or `purveyor` |
+| POST   | `/api/auth/register` | `{"email", "password", "name", "role"}` role is `seeker` or `purveyor` |
 | POST   | `/api/auth/login`    | `{"email", "password"}`                    |
+| GET    | `/api/auth/me`       | requires `Authorization: Bearer <token>`   |
 
-Passwords are hashed with argon2id (random per-user salt, PHC-encoded).
-Login does not yet issue a session or token.
+Register and login both return `{"user": {...}, "token": "..."}`. The token
+is an HS256 JWT signed with `JWT_SECRET`, valid for 24 hours, carrying only
+the user id and role. Passwords are hashed with argon2id (random per-user
+salt, PHC-encoded).
+
+The `users` table holds identity and login only; lifestyle profiles,
+purveyor details and listings go in their own tables keyed by `users.id`.
 
 ## Ports
 

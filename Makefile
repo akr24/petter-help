@@ -53,6 +53,7 @@ ps: ## Show container status
 ## ---------- Native (faster iteration) ----------
 
 export DATABASE_URL ?= postgres://petter:petter@localhost:5433/petter_help?sslmode=disable
+export JWT_SECRET   ?= dev-only-secret-change-me-0123456789abcdef
 
 .PHONY: backend
 backend: ## Run the Go API natively on :8080 (needs `make db-up`)

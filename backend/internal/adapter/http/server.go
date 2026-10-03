@@ -9,6 +9,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
+	"github.com/akr24/petter-help/backend/internal/token"
 	"github.com/akr24/petter-help/backend/internal/usecase"
 )
 
@@ -22,6 +23,7 @@ type Deps struct {
 	DB         Pinger
 	Dogs       *usecase.Dogs
 	Auth       *usecase.Auth
+	Tokens     *token.Issuer
 	CORSOrigin string
 }
 
@@ -37,6 +39,7 @@ func New(d Deps) *echo.Echo {
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{d.CORSOrigin},
 		AllowMethods: []string{echo.GET, echo.POST, echo.PUT, echo.DELETE, echo.OPTIONS},
+		AllowHeaders: []string{echo.HeaderContentType, echo.HeaderAuthorization},
 	}))
 
 	e.GET("/healthz", healthHandler(d.DB))
@@ -48,6 +51,7 @@ func New(d Deps) *echo.Echo {
 	h := authHandler{d.Auth}
 	auth.POST("/register", h.register)
 	auth.POST("/login", h.login)
+	auth.GET("/me", h.me, requireAuth(d.Tokens))
 
 	return e
 }

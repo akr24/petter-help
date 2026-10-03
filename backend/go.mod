@@ -3,6 +3,7 @@ module github.com/akr24/petter-help/backend
 go 1.25.0
 
 require (
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/labstack/echo/v4 v4.16.0
 	golang.org/x/crypto v0.55.0

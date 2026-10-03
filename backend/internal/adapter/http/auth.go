@@ -17,6 +17,7 @@ type authHandler struct {
 type registerRequest struct {
 	Email    string      `json:"email"`
 	Password string      `json:"password"`
+	Name     string      `json:"name"`
 	Role     domain.Role `json:"role"`
 }
 
@@ -31,7 +32,12 @@ func (h authHandler) register(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "malformed JSON")
 	}
 
-	u, err := h.auth.Register(c.Request().Context(), req.Email, req.Password, req.Role)
+	s, err := h.auth.Register(c.Request().Context(), usecase.RegisterInput{
+		Email:    req.Email,
+		Password: req.Password,
+		Name:     req.Name,
+		Role:     req.Role,
+	})
 	switch {
 	case errors.Is(err, usecase.ErrInvalidInput):
 		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
@@ -40,7 +46,7 @@ func (h authHandler) register(c echo.Context) error {
 	case err != nil:
 		return err
 	}
-	return c.JSON(http.StatusCreated, u)
+	return c.JSON(http.StatusCreated, s)
 }
 
 func (h authHandler) login(c echo.Context) error {
@@ -49,13 +55,24 @@ func (h authHandler) login(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "malformed JSON")
 	}
 
-	u, err := h.auth.Login(c.Request().Context(), req.Email, req.Password)
+	s, err := h.auth.Login(c.Request().Context(), req.Email, req.Password)
 	if errors.Is(err, domain.ErrInvalidCredentials) {
 		return echo.NewHTTPError(http.StatusUnauthorized, err.Error())
 	}
 	if err != nil {
 		return err
 	}
-	// No session or token yet: that's a separate step.
+	return c.JSON(http.StatusOK, s)
+}
+
+// me returns the signed-in user, looked up fresh from the database.
+func (h authHandler) me(c echo.Context) error {
+	u, err := h.auth.Current(c.Request().Context(), currentClaims(c).UserID)
+	if errors.Is(err, domain.ErrUnauthenticated) {
+		return echo.NewHTTPError(http.StatusUnauthorized, "account no longer exists")
+	}
+	if err != nil {
+		return err
+	}
 	return c.JSON(http.StatusOK, u)
 }

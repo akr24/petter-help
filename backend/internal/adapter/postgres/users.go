@@ -19,12 +19,14 @@ func NewUserRepository(pool *pgxpool.Pool) *UserRepository {
 	return &UserRepository{pool: pool}
 }
 
+const userColumns = `id, email, name, password_hash, role, created_at`
+
 func (r *UserRepository) Create(ctx context.Context, u *domain.User) error {
 	err := r.pool.QueryRow(ctx, `
-		INSERT INTO users (email, password_hash, role)
-		VALUES ($1, $2, $3)
+		INSERT INTO users (email, name, password_hash, role)
+		VALUES ($1, $2, $3, $4)
 		RETURNING id, created_at`,
-		u.Email, u.PasswordHash, u.Role,
+		u.Email, u.Name, u.PasswordHash, u.Role,
 	).Scan(&u.ID, &u.CreatedAt)
 
 	var pgErr *pgconn.PgError
@@ -34,14 +36,18 @@ func (r *UserRepository) Create(ctx context.Context, u *domain.User) error {
 	return err
 }
 
+func (r *UserRepository) FindByID(ctx context.Context, id int64) (*domain.User, error) {
+	return r.findOne(ctx, `SELECT `+userColumns+` FROM users WHERE id = $1`, id)
+}
+
 func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*domain.User, error) {
+	return r.findOne(ctx, `SELECT `+userColumns+` FROM users WHERE email = $1`, email)
+}
+
+func (r *UserRepository) findOne(ctx context.Context, sql string, arg any) (*domain.User, error) {
 	var u domain.User
-	err := r.pool.QueryRow(ctx, `
-		SELECT id, email, password_hash, role, created_at
-		FROM users
-		WHERE email = $1`,
-		email,
-	).Scan(&u.ID, &u.Email, &u.PasswordHash, &u.Role, &u.CreatedAt)
+	err := r.pool.QueryRow(ctx, sql, arg).
+		Scan(&u.ID, &u.Email, &u.Name, &u.PasswordHash, &u.Role, &u.CreatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, domain.ErrNotFound
 	}
