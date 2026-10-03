@@ -1,0 +1,33 @@
+# Backend + frontend. Start with `make up` (which also brings up the database).
+#
+# Both compose files share the `petter-help` network so the backend can reach
+# the db container by its service name.
+name: petter-help
+
+include:
+  - docker-compose.db.yml
+
+services:
+  backend:
+    build: ./backend
+    container_name: petter-help-backend
+    environment:
+      PORT: "8080"
+      DATABASE_URL: postgres://${POSTGRES_USER:-petter}:${POSTGRES_PASSWORD:-petter}@db:5432/${POSTGRES_DB:-petter_help}?sslmode=disable
+      CORS_ORIGIN: http://localhost:${FRONTEND_PORT:-5173}
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: http://localhost:${BACKEND_PORT:-8080}
+    container_name: petter-help-frontend
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
+    depends_on:
+      - backend

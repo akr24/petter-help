@@ -1,0 +1,22 @@
+main {
+  max-width: 640px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  text-align: left;
+}
+
+.dogs {
+  list-style: none;
+  padding: 0;
+}
+
+.dogs li {
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid #8884;
+  border-radius: 8px;
+}
+
+.error {
+  color: #c33;
+}
