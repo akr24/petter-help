@@ -9,6 +9,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
+	"github.com/akr24/petter-help/backend/internal/domain"
 	"github.com/akr24/petter-help/backend/internal/token"
 	"github.com/akr24/petter-help/backend/internal/usecase"
 )
@@ -23,6 +24,7 @@ type Deps struct {
 	DB         Pinger
 	Dogs       *usecase.Dogs
 	Auth       *usecase.Auth
+	Profiles   *usecase.SeekerProfiles
 	Tokens     *token.Issuer
 	CORSOrigin string
 }
@@ -52,6 +54,11 @@ func New(d Deps) *echo.Echo {
 	auth.POST("/register", h.register)
 	auth.POST("/login", h.login)
 	auth.GET("/me", h.me, requireAuth(d.Tokens))
+
+	seeker := api.Group("/seeker", requireAuth(d.Tokens), requireRole(domain.RoleSeeker))
+	p := seekerProfileHandler{d.Profiles}
+	seeker.GET("/profile", p.get)
+	seeker.PUT("/profile", p.put)
 
 	return e
 }

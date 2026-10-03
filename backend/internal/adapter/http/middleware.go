@@ -6,6 +6,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
+	"github.com/akr24/petter-help/backend/internal/domain"
 	"github.com/akr24/petter-help/backend/internal/token"
 )
 
@@ -26,6 +27,18 @@ func requireAuth(tokens *token.Issuer) echo.MiddlewareFunc {
 				return echo.NewHTTPError(http.StatusUnauthorized, "invalid or expired token")
 			}
 			c.Set(claimsKey, claims)
+			return next(c)
+		}
+	}
+}
+
+// requireRole runs after requireAuth and rejects callers of any other role.
+func requireRole(role domain.Role) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			if currentClaims(c).Role != role {
+				return echo.NewHTTPError(http.StatusForbidden, string(role)+" account required")
+			}
 			return next(c)
 		}
 	}

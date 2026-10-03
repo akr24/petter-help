@@ -42,6 +42,7 @@ func main() {
 		DB:         pool,
 		Dogs:       usecase.NewDogs(postgres.NewDogRepository(pool)),
 		Auth:       usecase.NewAuth(postgres.NewUserRepository(pool), tokens),
+		Profiles:   usecase.NewSeekerProfiles(postgres.NewSeekerProfileRepository(pool)),
 		Tokens:     tokens,
 		CORSOrigin: envOr("CORS_ORIGIN", "*"),
 	})

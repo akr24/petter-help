@@ -59,6 +59,32 @@ one, `make db-reset` drops the volume so it is applied on the next `make up`.
 | POST   | `/api/auth/register` | `{"email", "password", "name", "role"}` role is `seeker` or `purveyor` |
 | POST   | `/api/auth/login`    | `{"email", "password"}`                    |
 | GET    | `/api/auth/me`       | requires `Authorization: Bearer <token>`   |
+| GET    | `/api/seeker/profile`| seeker token; 404 until a profile is saved |
+| PUT    | `/api/seeker/profile`| seeker token; full replace, see below      |
+
+Seeker profile body (every field required except the booleans, arrays and
+notes, which default to false, `[]` and `""`):
+
+```json
+{
+  "home_type": "apartment | house | other",
+  "has_yard": false,
+  "children": "none | young | older",
+  "has_dogs": false,
+  "has_cats": false,
+  "activity_level": "low | moderate | high",
+  "hours_alone": 0,
+  "experience": "first_time | some | experienced",
+  "training_commitment": "low | moderate | high",
+  "grooming_commitment": "low | moderate | high",
+  "needs_hypoallergenic": false,
+  "size_preferences": ["small", "medium", "large"],
+  "age_preferences": ["puppy", "adult", "senior"],
+  "notes": ""
+}
+```
+
+The rationale for each field is in `db/migrations/004_seeker_profiles.sql`.
 
 Register and login both return `{"user": {...}, "token": "..."}`. The token
 is an HS256 JWT signed with `JWT_SECRET`, valid for 24 hours, carrying only
