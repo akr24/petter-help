@@ -1,49 +1,76 @@
-import { useEffect, useState } from 'react'
+import { BrowserRouter, Link, Navigate, Route, Routes } from 'react-router-dom'
 import './App.css'
+import { AuthProvider } from './auth/AuthContext'
+import { useAuth } from './auth/context'
+import DogsPage from './pages/DogsPage'
+import LoginPage from './pages/LoginPage'
+import RegisterPage from './pages/RegisterPage'
 
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080'
-
-type Dog = {
-  id: number
-  name: string
-  breed: string
-  size: string
-  personality: string
-  needs: string
-  purveyor: string
-}
-
-function App() {
-  const [dogs, setDogs] = useState<Dog[]>([])
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    fetch(`${API_URL}/api/dogs`)
-      .then((res) => (res.ok ? res.json() : Promise.reject(res.statusText)))
-      .then(setDogs)
-      .catch((err) => setError(String(err)))
-  }, [])
-
+function Header() {
+  const { user, loading, logout } = useAuth()
   return (
-    <main>
-      <h1>PetterHelp</h1>
-      <p>Adoptable dogs in Cambridge, MA. Matching comes next.</p>
-      {error && <p className="error">Could not reach the API: {error}</p>}
-      <ul className="dogs">
-        {dogs.map((dog) => (
-          <li key={dog.id}>
-            <strong>{dog.name}</strong> · {dog.breed}, {dog.size}
-            <br />
-            <small>{dog.personality}</small>
-            <br />
-            <small>Needs: {dog.needs}</small>
-            <br />
-            <small>From {dog.purveyor}</small>
-          </li>
-        ))}
-      </ul>
-    </main>
+    <header>
+      <Link to="/" className="brand">
+        PetterHelp
+      </Link>
+      <nav>
+        {loading ? null : user ? (
+          <>
+            <span className="muted">
+              {user.name} · {user.role}
+            </span>
+            <button type="button" className="link" onClick={logout}>
+              Sign out
+            </button>
+          </>
+        ) : (
+          <>
+            <Link to="/login">Sign in</Link>
+            <Link to="/register" className="button">
+              Sign up
+            </Link>
+          </>
+        )}
+      </nav>
+    </header>
   )
 }
 
-export default App
+// Sends signed-in users away from the auth pages.
+function GuestOnly({ children }: { children: React.ReactElement }) {
+  const { user, loading } = useAuth()
+  if (loading) return null
+  return user ? <Navigate to="/" replace /> : children
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <Header />
+        <main>
+          <Routes>
+            <Route path="/" element={<DogsPage />} />
+            <Route
+              path="/login"
+              element={
+                <GuestOnly>
+                  <LoginPage />
+                </GuestOnly>
+              }
+            />
+            <Route
+              path="/register"
+              element={
+                <GuestOnly>
+                  <RegisterPage />
+                </GuestOnly>
+              }
+            />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </main>
+      </AuthProvider>
+    </BrowserRouter>
+  )
+}

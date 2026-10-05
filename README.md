@@ -94,6 +94,13 @@ salt, PHC-encoded).
 The `users` table holds identity and login only; lifestyle profiles,
 purveyor details and listings go in their own tables keyed by `users.id`.
 
+## Frontend
+
+Routes: `/` (dog list), `/login`, `/register`. Sign up or sign in and the
+JWT is kept in `localStorage`; on load it is re-checked against
+`/api/auth/me` and dropped if stale. `src/api/client.ts` is the only place
+that talks to the backend.
+
 ## Ports
 
 | Service  | Port |
